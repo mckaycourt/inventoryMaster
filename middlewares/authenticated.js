@@ -35,7 +35,7 @@ class Database {
     }
 }
 
-
+/*
 function checkUser(user) {
     if (location === '/inventory') {
         for (let i in user.memberOf) {
@@ -54,6 +54,7 @@ function checkUser(user) {
         return false;
     }
 }
+*/
 
 function checkUserUpdated(user) {
     if (location === '/inventory') {
@@ -64,7 +65,7 @@ function checkUserUpdated(user) {
                 let possiblities = ['mmcourt', 'jking793', 'rbc9', 'pdiaz3', 'kroosa', 'twilks', 'mft17'];
                 //added myself and current employees in here, i don't think any of of the others are still working here besides rbc9
                 for (let i in possiblities) {
-                    if (possiblities[i] === user.netID) {
+                    if (possiblities[i] === user.netId) {
                         return true;
                     }
                 }
@@ -90,6 +91,7 @@ module.exports = function(req, res, next) {
             .then(function success(response) {
                 console.log("Ticket valid! Hello, " + response.username);
                 user = response.attributes;
+                console.log(user);
             })
             .then(() => {
                 if (checkUserUpdated(user)) {
