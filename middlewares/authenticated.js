@@ -44,8 +44,7 @@ function checkUser(user) {
             }
         }
         return false;
-    }
-    else {
+    } else {
         let possiblities = ['mmcourt', 'bquinlan', 'rbc9', 'mr28', 'rmw78'];
         for (let i in possiblities) {
             if (possiblities[i] === user.netId) {
@@ -54,10 +53,29 @@ function checkUser(user) {
         }
         return false;
     }
-
 }
 
-module.exports = function (req, res, next) {
+function checkUserUpdated(user) {
+    if (location === '/inventory') {
+        for (let i in user.memberOf) {
+            if (user.memberOf[i] === 'RICHARD_CROOKSTON--RBC9') {
+                return true;
+            } else if (user.memberOf[i] !== 'RICHARD_CROOKSTON--RBC9') {
+                let possiblities = ['mmcourt', 'jking793', 'rbc9', 'pdiaz3', 'kroosa', 'twilks', 'mft17'];
+                //added myself and current employees in here, i don't think any of of the others are still working here besides rbc9
+                for (let i in possiblities) {
+                    if (possiblities[i] === user.netID) {
+                        return true;
+                    }
+                }
+            } else {
+                return false;
+            }
+        }
+    }
+}
+
+module.exports = function(req, res, next) {
     if (req.path === '/getTicket') {
         let ticket = req.query.ticket;
         let goTo = req.query.goTo;
@@ -74,7 +92,7 @@ module.exports = function (req, res, next) {
                 user = response.attributes;
             })
             .then(() => {
-                if (checkUser(user)) {
+                if (checkUserUpdated(user)) {
                     let goTo = req.query.goTo;
                     let json = JSON.stringify(user);
                     let defaultComputerShowOptions = {
@@ -170,8 +188,7 @@ module.exports = function (req, res, next) {
                             console.log(err);
                         })
 
-                }
-                else {
+                } else {
                     res.render('login');
                 }
             })
@@ -179,13 +196,11 @@ module.exports = function (req, res, next) {
                 console.log("Invalid ticket. Error message was: " + e.message);
                 // res.redirect(location + '/login');
             });
-    }
-    else {
+    } else {
         let cookie = vault.read(req);
-        if(req.path === '/email'){
+        if (req.path === '/email') {
             next();
-        }
-        else if (cookie === "") {
+        } else if (cookie === "") {
             let parameters = '';
             let query = req.query;
             let goTo = req.originalUrl;
@@ -195,8 +210,7 @@ module.exports = function (req, res, next) {
                 parameters += '?' + i + '=' + query[i];
             }
             res.redirect('https://cas.byu.edu/cas/login?service=' + encodeURIComponent(URL + '/getTicket?goTo=' + goTo));
-        }
-        else {
+        } else {
             next();
         }
     }
