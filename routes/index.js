@@ -54,24 +54,21 @@ function formatDate(rows) {
             let date = new Date(computer.DateAcquired + ' MST');
             computer.DateAcquiredFilter = computer.DateAcquired.substr(0, computer.DateAcquired.length - 3) + '%';
             computer.DateAcquired = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-        }
-        else {
+        } else {
             computer.DateAcquired = 'None';
         }
         if (computer.Warranty) {
             let date = new Date(computer.Warranty + ' MST');
             computer.WarrantyFilter = computer.Warranty.substr(0, computer.Warranty.length - 3) + '%';
             computer.Warranty = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-        }
-        else {
+        } else {
             computer.Warranty = 'None';
         }
         if (computer['MAX(Inventory.CurrentDate)']) {
             let date = new Date(computer['MAX(Inventory.CurrentDate)'] + ' MST');
             computer['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
             computer.inventoryFilter = 'Inventory.CurrentDate <= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + daysInThisMonth(date) + '\' AND ' + 'Inventory.CurrentDate >= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-01\'';
-        }
-        else {
+        } else {
             computer['MAX(Inventory.CurrentDate)'] = 'Never';
             computer.inventoryFilter = 'Inventory.CurrentDate IS NULL';
         }
@@ -126,7 +123,7 @@ let employeeFilters = [];
 let finalQuery = "";
 let hardware = false;
 
-
+/*
 function checkUser(user) {
     if (location === '/inventory') {
         for (let i in user.memberOf) {
@@ -135,8 +132,7 @@ function checkUser(user) {
             }
         }
         return false;
-    }
-    else {
+    } else {
         let possiblities = ['mmcourt', 'bquinlan', 'rbc9', 'mr28'];
         for (let i in possiblities) {
             if (possiblities[i] === user.netId) {
@@ -145,10 +141,28 @@ function checkUser(user) {
         }
         return false;
     }
+}
+*/
 
+function checkUser(user) {
+    if (location === '/inventory') {
+        for (let i in user.memberOf) {
+            if (user.memberOf[i] === 'RICHARD_CROOKSTON--RBC9') {
+                return true;
+            }
+        }
+        let possiblities = ['mmcourt', 'jking793', 'rbc9', 'pdiaz3', 'kroosa', 'twilks', 'mft17'];
+        //added myself and current employees in here, i don't think any of of the others are still working here besides rbc9
+        for (let i in possiblities) {
+            if (possiblities[i] === user.netId) {
+                return true;
+            }
+        }
+        return false;
+    }
 }
 
-router.get('/employeeTable', function (req, res, next) {
+router.get('/employeeTable', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (req.query.clear) {
         employeeFilters = [];
@@ -222,8 +236,7 @@ router.get('/employeeTable', function (req, res, next) {
                     let date = new Date(employee.DateSwitched + ' MST');
                     employee.DateSwitchedFilter = employee.DateSwitched.substr(0, employee.DateSwitched.length - 3) + '%';
                     employee.DateSwitched = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     employee.DateSwitched = 'None';
                 }
             }
@@ -247,7 +260,7 @@ router.get('/employeeTable', function (req, res, next) {
         })
 });
 
-router.get('/computerTable', function (req, res, next) {
+router.get('/computerTable', function(req, res, next) {
     let database = new Database(config.getConfig());
     let computers = {};
     let user = JSON.parse(vault.read(req));
@@ -275,12 +288,9 @@ router.get('/computerTable', function (req, res, next) {
                     filters[req.query.not] = filters[req.query.not].replace('!=', '=');
                 else if (filters[req.query.not].includes('!(')) {
                     filters[req.query.not] = filters[req.query.not].replace('!(', '(');
-                }
-                else if (filters[req.query.not].includes('(')) {
+                } else if (filters[req.query.not].includes('(')) {
                     filters[req.query.not] = filters[req.query.not].replace('(', '!(');
-                }
-
-                else
+                } else
                     filters[req.query.not] = filters[req.query.not].replace('=', '!=');
             }
             if (req.query.where) {
@@ -301,14 +311,11 @@ router.get('/computerTable', function (req, res, next) {
                 for (let filter in filters) {
                     if (filters[filter].includes('EmployeeID') || filters[filter].includes('RotationGroup')) {
                         query += 'Employee.';
-                    }
-                    else if (filters[filter].includes('Processor') || filters[filter].includes('Memory') || filters[filter].includes('HardDrive') || filters[filter].includes('VCName') || filters[filter].includes('Touch') || filters[filter].includes('ScreenResolution')) {
+                    } else if (filters[filter].includes('Processor') || filters[filter].includes('Memory') || filters[filter].includes('HardDrive') || filters[filter].includes('VCName') || filters[filter].includes('Touch') || filters[filter].includes('ScreenResolution')) {
                         query += 'Hardware.';
-                    }
-                    else if (filters[filter].includes('CurrentDate')) {
+                    } else if (filters[filter].includes('CurrentDate')) {
                         console.log('inventory query');
-                    }
-                    else {
+                    } else {
                         query += 'Computer.';
                     }
                     query += filters[filter].replace('%20', ' ').replace('%27', '\'').replace('%20', ' ').replace('%27', '\'');
@@ -320,63 +327,47 @@ router.get('/computerTable', function (req, res, next) {
 
             if (req.query.sortby === 'ICN') {
                 query += ' Order BY ICN';
-            }
-            else if (req.query.sortby === 'EmployeeID') {
+            } else if (req.query.sortby === 'EmployeeID') {
                 query += ' ORDER BY EmployeeID';
-            }
-            else if (req.query.sortby === 'Make') {
+            } else if (req.query.sortby === 'Make') {
                 query += ' ORDER BY Make';
-            }
-            else if (req.query.sortby === 'Model') {
+            } else if (req.query.sortby === 'Model') {
                 query += ' ORDER BY Model';
-            }
-            else if (req.query.sortby === 'firstname') {
+            } else if (req.query.sortby === 'firstname') {
                 query += ' ORDER BY FirstName';
-            }
-            else if (req.query.sortby === 'lastname') {
+            } else if (req.query.sortby === 'lastname') {
                 query += ' ORDER BY LastName';
-            }
-            else if (req.query.sortby === 'dateAcquired') {
+            } else if (req.query.sortby === 'dateAcquired') {
                 query += ' ORDER BY DateAcquired';
-            }
-            else if (req.query.sortby === 'processorType') {
+            } else if (req.query.sortby === 'processorType') {
                 query += ' ORDER BY ProcessorType';
-            }
-            else if (req.query.sortby === 'processorSpeed') {
+            } else if (req.query.sortby === 'processorSpeed') {
                 query += ' ORDER BY ProcessorSpeed';
-            }
-            else if (req.query.sortby === 'memory') {
+            } else if (req.query.sortby === 'memory') {
                 query += ' ORDER BY Memory';
-            }
-            else if (req.query.sortby === 'hardDrive') {
+            } else if (req.query.sortby === 'hardDrive') {
                 query += ' ORDER BY HardDrive';
-            }
-            else if (req.query.sortby === 'vcName') {
+            } else if (req.query.sortby === 'vcName') {
                 query += ' ORDER BY VCName';
-            }
-            else if (req.query.sortby === 'Rotation') {
+            } else if (req.query.sortby === 'Rotation') {
                 query += ' ORDER BY Employee.RotationGroup';
-            }
-            else if (req.query.sortby) {
+            } else if (req.query.sortby) {
                 query += ' ORDER BY ';
                 query += req.query.sortby;
-            }
-            else {
+            } else {
                 query += ' Order BY ICN';
             }
 
             if (req.query.order === 'asc') {
                 query += ' ASC';
-            }
-            else if (req.query.order === 'desc') {
+            } else if (req.query.order === 'desc') {
                 query += ' DESC';
             }
             console.log(query);
 
             if (req.query.hardware === 'true') {
                 hardware = true;
-            }
-            else if (req.query.hardware === 'false') {
+            } else if (req.query.hardware === 'false') {
                 hardware = false;
             }
 
@@ -395,24 +386,21 @@ router.get('/computerTable', function (req, res, next) {
                     let date = new Date(computer.DateAcquired + ' MST');
                     computer.DateAcquiredFilter = 'DateAcquired LIKE \'' + computer.DateAcquired.substr(0, computer.DateAcquired.length - 3) + '%\'';
                     computer.DateAcquired = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     computer.DateAcquired = 'None';
                 }
                 if (computer.Warranty) {
                     let date = new Date(computer.Warranty + ' MST');
                     computer.WarrantyFilter = 'Warranty LIKE \'' + computer.Warranty.substr(0, computer.Warranty.length - 3) + '%\'';
                     computer.Warranty = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     computer.Warranty = 'None';
                 }
                 if (computer['MAX(Inventory.CurrentDate)']) {
                     let date = new Date(computer['MAX(Inventory.CurrentDate)'] + ' MST');
                     computer['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     computer.inventoryFilter = '(Inventory.CurrentDate <= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + daysInThisMonth(date) + '\' AND ' + 'Inventory.CurrentDate >= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-01\')';
-                }
-                else {
+                } else {
                     computer['MAX(Inventory.CurrentDate)'] = 'Never';
                     computer.inventoryFilter = 'Inventory.CurrentDate IS NULL';
                 }
@@ -440,7 +428,7 @@ router.get('/computerTable', function (req, res, next) {
         });
 });
 
-router.get('/monitorTable', function (req, res, next) {
+router.get('/monitorTable', function(req, res, next) {
     let database = new Database(config.getConfig());
     let monitors = {};
     let actionButton = {};
@@ -468,12 +456,9 @@ router.get('/monitorTable', function (req, res, next) {
                     monitorFilters[req.query.not] = monitorFilters[req.query.not].replace('!=', '=');
                 else if (monitorFilters[req.query.not].includes('!(')) {
                     monitorFilters[req.query.not] = monitorFilters[req.query.not].replace('!(', '(');
-                }
-                else if (monitorFilters[req.query.not].includes('(')) {
+                } else if (monitorFilters[req.query.not].includes('(')) {
                     monitorFilters[req.query.not] = monitorFilters[req.query.not].replace('(', '!(');
-                }
-
-                else
+                } else
                     monitorFilters[req.query.not] = monitorFilters[req.query.not].replace('=', '!=');
             }
             if (req.query.where) {
@@ -504,33 +489,25 @@ router.get('/monitorTable', function (req, res, next) {
             query += ' GROUP BY ICN';
             if (req.query.sortby === 'ICN') {
                 query += ' Order BY ICN';
-            }
-            else if (req.query.sortby === 'EmployeeID') {
+            } else if (req.query.sortby === 'EmployeeID') {
                 query += ' ORDER BY EmployeeID';
-            }
-            else if (req.query.sortby === 'Make') {
+            } else if (req.query.sortby === 'Make') {
                 query += ' ORDER BY Make';
-            }
-            else if (req.query.sortby === 'Model') {
+            } else if (req.query.sortby === 'Model') {
                 query += ' ORDER BY Model';
-            }
-            else if (req.query.sortby === 'firstName') {
+            } else if (req.query.sortby === 'firstName') {
                 query += ' ORDER BY firstName';
-            }
-            else if (req.query.sortby === 'DateAcquired') {
+            } else if (req.query.sortby === 'DateAcquired') {
                 query += ' ORDER BY DateAcquired';
-            }
-            else if (req.query.sortby === 'lastName') {
+            } else if (req.query.sortby === 'lastName') {
                 query += ' ORDER BY lastName';
-            }
-            else if (req.query.sortby) {
+            } else if (req.query.sortby) {
                 query += ' ORDER BY ';
                 query += req.query.sortby;
             }
             if (req.query.order === 'asc') {
                 query += ' ASC';
-            }
-            else if (req.query.order === 'desc') {
+            } else if (req.query.order === 'desc') {
                 query += ' DESC';
             }
             console.log(query);
@@ -543,8 +520,7 @@ router.get('/monitorTable', function (req, res, next) {
                     let date = new Date(monitor['MAX(Inventory.CurrentDate)'] + ' MST');
                     monitor['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     monitor.inventoryFilter = 'Inventory.CurrentDate <= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + daysInThisMonth(date) + '\' AND ' + 'Inventory.CurrentDate >= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-01\'';
-                }
-                else {
+                } else {
                     monitor['MAX(Inventory.CurrentDate)'] = 'Never';
                     monitor.inventoryFilter = 'Inventory.CurrentDate IS NULL';
                 }
@@ -570,7 +546,7 @@ router.get('/monitorTable', function (req, res, next) {
         });
 });
 
-router.get('/peripheralTable', function (req, res, next) {
+router.get('/peripheralTable', function(req, res, next) {
     let database = new Database(config.getConfig());
     let peripherals = {};
     let user = JSON.parse(vault.read(req));
@@ -597,12 +573,9 @@ router.get('/peripheralTable', function (req, res, next) {
                     peripheralFilters[req.query.not] = peripheralFilters[req.query.not].replace('!=', '=');
                 else if (peripheralFilters[req.query.not].includes('!(')) {
                     peripheralFilters[req.query.not] = peripheralFilters[req.query.not].replace('!(', '(');
-                }
-                else if (peripheralFilters[req.query.not].includes('(')) {
+                } else if (peripheralFilters[req.query.not].includes('(')) {
                     peripheralFilters[req.query.not] = peripheralFilters[req.query.not].replace('(', '!(');
-                }
-
-                else
+                } else
                     peripheralFilters[req.query.not] = peripheralFilters[req.query.not].replace('=', '!=');
             }
             if (req.query.where) {
@@ -634,36 +607,27 @@ router.get('/peripheralTable', function (req, res, next) {
 
             if (req.query.sortby === 'ICN') {
                 query += ' Order BY ICN';
-            }
-            else if (req.query.sortby === 'EmployeeID') {
+            } else if (req.query.sortby === 'EmployeeID') {
                 query += ' ORDER BY EmployeeID';
-            }
-            else if (req.query.sortby === 'Make') {
+            } else if (req.query.sortby === 'Make') {
                 query += ' ORDER BY Make';
-            }
-            else if (req.query.sortby === 'Model') {
+            } else if (req.query.sortby === 'Model') {
                 query += ' ORDER BY Model';
-            }
-            else if (req.query.sortby === 'firstName') {
+            } else if (req.query.sortby === 'firstName') {
                 query += ' ORDER BY firstName';
-            }
-            else if (req.query.sortby === 'DateAcquired') {
+            } else if (req.query.sortby === 'DateAcquired') {
                 query += ' ORDER BY DateAcquired';
-            }
-            else if (req.query.sortby === 'lastName') {
+            } else if (req.query.sortby === 'lastName') {
                 query += ' ORDER BY lastName';
-            }
-            else if (req.query.sortby === 'Item') {
+            } else if (req.query.sortby === 'Item') {
                 query += ' ORDER BY Item';
-            }
-            else if (req.query.sortby) {
+            } else if (req.query.sortby) {
                 query += ' ORDER BY ';
                 query += req.query.sortby;
             }
             if (req.query.order === 'asc') {
                 query += ' ASC';
-            }
-            else if (req.query.order === 'desc') {
+            } else if (req.query.order === 'desc') {
                 query += ' DESC';
             }
             console.log(query);
@@ -676,8 +640,7 @@ router.get('/peripheralTable', function (req, res, next) {
                     let date = new Date(peripheral['MAX(Inventory.CurrentDate)'] + ' MST');
                     peripheral['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     peripheral.inventoryFilter = 'Inventory.CurrentDate <= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + daysInThisMonth(date) + '\' AND ' + 'Inventory.CurrentDate >= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-01\'';
-                }
-                else {
+                } else {
                     peripheral['MAX(Inventory.CurrentDate)'] = 'Never';
                     peripheral.inventoryFilter = 'Inventory.CurrentDate IS NULL';
                 }
@@ -705,7 +668,7 @@ router.get('/peripheralTable', function (req, res, next) {
 
 });
 
-router.get('/printerTable', function (req, res, next) {
+router.get('/printerTable', function(req, res, next) {
     let database = new Database(config.getConfig());
     let printers = {};
     let user = JSON.parse(vault.read(req));
@@ -730,12 +693,9 @@ router.get('/printerTable', function (req, res, next) {
                     printerFilters[req.query.not] = printerFilters[req.query.not].replace('!=', '=');
                 else if (printerFilters[req.query.not].includes('!(')) {
                     printerFilters[req.query.not] = printerFilters[req.query.not].replace('!(', '(');
-                }
-                else if (printerFilters[req.query.not].includes('(')) {
+                } else if (printerFilters[req.query.not].includes('(')) {
                     printerFilters[req.query.not] = printerFilters[req.query.not].replace('(', '!(');
-                }
-
-                else
+                } else
                     printerFilters[req.query.not] = printerFilters[req.query.not].replace('=', '!=');
             }
             if (req.query.where) {
@@ -765,36 +725,27 @@ router.get('/printerTable', function (req, res, next) {
             query += ' GROUP BY ICN';
             if (req.query.sortby === 'ICN') {
                 query += ' Order BY ICN';
-            }
-            else if (req.query.sortby === 'EmployeeID') {
+            } else if (req.query.sortby === 'EmployeeID') {
                 query += ' ORDER BY EmployeeID';
-            }
-            else if (req.query.sortby === 'Make') {
+            } else if (req.query.sortby === 'Make') {
                 query += ' ORDER BY Make';
-            }
-            else if (req.query.sortby === 'Model') {
+            } else if (req.query.sortby === 'Model') {
                 query += ' ORDER BY Model';
-            }
-            else if (req.query.sortby === 'firstName') {
+            } else if (req.query.sortby === 'firstName') {
                 query += ' ORDER BY firstName';
-            }
-            else if (req.query.sortby === 'lastName') {
+            } else if (req.query.sortby === 'lastName') {
                 query += ' ORDER BY lastName';
-            }
-            else if (req.query.sortby === 'dateAcquired') {
+            } else if (req.query.sortby === 'dateAcquired') {
                 query += ' ORDER BY DateAcquired';
-            }
-            else if (req.query.sortby === 'LesOlsonID') {
+            } else if (req.query.sortby === 'LesOlsonID') {
                 query += ' ORDER BY LesOlsonID';
-            }
-            else if (req.query.sortby) {
+            } else if (req.query.sortby) {
                 query += ' ORDER BY ';
                 query += req.query.sortby;
             }
             if (req.query.order === 'asc') {
                 query += ' ASC';
-            }
-            else if (req.query.order === 'desc') {
+            } else if (req.query.order === 'desc') {
                 query += ' DESC';
             }
             console.log(query);
@@ -811,8 +762,7 @@ router.get('/printerTable', function (req, res, next) {
                     let pageCountDate = new Date(printer['MAX(PageCounts.Date)'] + ' MST');
                     printer['MAX(PageCounts.Date)'] = monthNames[pageCountDate.getMonth()] + ' ' + pageCountDate.getFullYear();
                     printer.inventoryFilter = 'Inventory.CurrentDate <= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-' + daysInThisMonth(date) + '\' AND ' + 'Inventory.CurrentDate >= \'' + date.getFullYear() + '-' + ("0" + (date.getMonth() + 1)).slice(-2) + '-01\'';
-                }
-                else {
+                } else {
                     printer['MAX(Inventory.CurrentDate)'] = 'Never';
                     printer.inventoryFilter = 'Inventory.CurrentDate IS NULL';
                 }
@@ -841,7 +791,7 @@ router.get('/printerTable', function (req, res, next) {
 
 });
 
-router.get('/employees', function (req, res, next) {
+router.get('/employees', function(req, res, next) {
     let database = new Database(config.getConfig());
     let employees = {};
 
@@ -863,7 +813,7 @@ router.get('/employees', function (req, res, next) {
         });
 });
 
-router.get('/otherSlots', function (req, res, next) {
+router.get('/otherSlots', function(req, res, next) {
     let database = new Database(config.getConfig());
     let employees = {};
 
@@ -885,7 +835,7 @@ router.get('/otherSlots', function (req, res, next) {
         });
 });
 
-router.get('/card', function (req, res, next) {
+router.get('/card', function(req, res, next) {
     let user = JSON.parse(vault.read(req));
     let employeeId = parseInt(req.query.EmployeeID);
     let employeeRows = {};
@@ -901,8 +851,7 @@ router.get('/card', function (req, res, next) {
     let peripheralShowOptions = {};
     if (!req.query.surplussing || req.query.surplussing === '') {
         surplussing = 'false';
-    }
-    else {
+    } else {
         surplussing = req.query.surplussing;
     }
 
@@ -931,8 +880,7 @@ router.get('/card', function (req, res, next) {
                 if (computer['MAX(Inventory.CurrentDate)']) {
                     let date = new Date(computer['MAX(Inventory.CurrentDate)']);
                     computer['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     computer['MAX(Inventory.CurrentDate)'] = 'Never';
                 }
             }
@@ -949,8 +897,7 @@ router.get('/card', function (req, res, next) {
                 if (monitor['MAX(Inventory.CurrentDate)']) {
                     let date = new Date(monitor['MAX(Inventory.CurrentDate)']);
                     monitor['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     monitor['MAX(Inventory.CurrentDate)'] = 'Never';
                 }
             }
@@ -967,8 +914,7 @@ router.get('/card', function (req, res, next) {
                 if (printer['MAX(Inventory.CurrentDate)']) {
                     let date = new Date(printer['MAX(Inventory.CurrentDate)']);
                     printer['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     printer['MAX(Inventory.CurrentDate)'] = 'Never';
                 }
             }
@@ -985,8 +931,7 @@ router.get('/card', function (req, res, next) {
                 if (peripheral['MAX(Inventory.CurrentDate)']) {
                     let date = new Date(peripheral['MAX(Inventory.CurrentDate)']);
                     peripheral['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
-                }
-                else {
+                } else {
                     peripheral['MAX(Inventory.CurrentDate)'] = 'Never';
                 }
             }
@@ -1015,7 +960,7 @@ router.get('/card', function (req, res, next) {
         });
 });
 
-router.get('/getModelOptions', function (req, res, next) {
+router.get('/getModelOptions', function(req, res, next) {
     let Type = req.query.type;
     let Make = req.query.make;
     let database = new Database(config.getConfig());
@@ -1025,20 +970,20 @@ router.get('/getModelOptions', function (req, res, next) {
     database.query('SELECT DISTINCT Model FROM ?? WHERE Make = ? AND EmployeeID != 400 ORDER BY Model', [Type, Make])
         .then(rows => {
             modelOptions = rows;
-            modelOptions[modelOptions.length] = {Model: 'None'};
-            modelOptions[modelOptions.length] = {Model: 'Add a New Option'};
+            modelOptions[modelOptions.length] = { Model: 'None' };
+            modelOptions[modelOptions.length] = { Model: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getModelOptions', {modelOptions, location});
+            res.render('getModelOptions', { modelOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getProcessorOptions', function (req, res, next) {
+router.get('/getProcessorOptions', function(req, res, next) {
     let Model = req.query.model;
     let database = new Database(config.getConfig());
 
@@ -1047,20 +992,20 @@ router.get('/getProcessorOptions', function (req, res, next) {
     database.query('SELECT DISTINCT ProcessorType FROM Computer LEFT JOIN Hardware ON Computer.HardwareID = Hardware.HardwareID WHERE Model = ?', [Model])
         .then(rows => {
             processorOptions = rows;
-            processorOptions[processorOptions.length] = {ProcessorType: 'None'};
-            processorOptions[processorOptions.length] = {ProcessorType: 'Add a New Option'};
+            processorOptions[processorOptions.length] = { ProcessorType: 'None' };
+            processorOptions[processorOptions.length] = { ProcessorType: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getProcessorOptions', {processorOptions, location});
+            res.render('getProcessorOptions', { processorOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getProcessorSpeedOptions', function (req, res, next) {
+router.get('/getProcessorSpeedOptions', function(req, res, next) {
     let ProcessorType = req.query.processorType;
     let database = new Database(config.getConfig());
 
@@ -1069,20 +1014,20 @@ router.get('/getProcessorSpeedOptions', function (req, res, next) {
     database.query('SELECT DISTINCT ProcessorSpeed FROM Computer LEFT JOIN Hardware ON Computer.HardwareID = Hardware.HardwareID WHERE ProcessorType = ?', [ProcessorType])
         .then(rows => {
             processorSpeedOptions = rows;
-            processorSpeedOptions[processorSpeedOptions.length] = {ProcessorSpeed: 'None'};
-            processorSpeedOptions[processorSpeedOptions.length] = {ProcessorSpeed: 'Add a New Option'};
+            processorSpeedOptions[processorSpeedOptions.length] = { ProcessorSpeed: 'None' };
+            processorSpeedOptions[processorSpeedOptions.length] = { ProcessorSpeed: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getProcessorSpeedOptions', {processorSpeedOptions, location});
+            res.render('getProcessorSpeedOptions', { processorSpeedOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getMemoryOptions', function (req, res, next) {
+router.get('/getMemoryOptions', function(req, res, next) {
     let Model = req.query.model;
     let database = new Database(config.getConfig());
 
@@ -1091,20 +1036,20 @@ router.get('/getMemoryOptions', function (req, res, next) {
     database.query('SELECT DISTINCT Memory FROM Computer LEFT JOIN Hardware ON Computer.HardwareID = Hardware.HardwareID WHERE Model = ?', [Model])
         .then(rows => {
             memoryOptions = rows;
-            memoryOptions[memoryOptions.length] = {Memory: 'None'};
-            memoryOptions[memoryOptions.length] = {Memory: 'Add a New Option'};
+            memoryOptions[memoryOptions.length] = { Memory: 'None' };
+            memoryOptions[memoryOptions.length] = { Memory: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getMemoryOptions', {memoryOptions, location});
+            res.render('getMemoryOptions', { memoryOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getHardDriveOptions', function (req, res, next) {
+router.get('/getHardDriveOptions', function(req, res, next) {
     let Model = req.query.model;
     let database = new Database(config.getConfig());
 
@@ -1113,20 +1058,20 @@ router.get('/getHardDriveOptions', function (req, res, next) {
     database.query('SELECT DISTINCT HardDrive FROM Computer LEFT JOIN Hardware ON Computer.HardwareID = Hardware.HardwareID WHERE Model = ?', [Model])
         .then(rows => {
             hardDriveOptions = rows;
-            hardDriveOptions[hardDriveOptions.length] = {HardDrive: 'None'};
-            hardDriveOptions[hardDriveOptions.length] = {HardDrive: 'Add a New Option'};
+            hardDriveOptions[hardDriveOptions.length] = { HardDrive: 'None' };
+            hardDriveOptions[hardDriveOptions.length] = { HardDrive: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getHardDriveOptions', {hardDriveOptions, location});
+            res.render('getHardDriveOptions', { hardDriveOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getGraphicsCardOptions', function (req, res, next) {
+router.get('/getGraphicsCardOptions', function(req, res, next) {
     let Model = req.query.model;
     let database = new Database(config.getConfig());
 
@@ -1135,20 +1080,20 @@ router.get('/getGraphicsCardOptions', function (req, res, next) {
     database.query('SELECT DISTINCT VCName FROM Computer LEFT JOIN Hardware ON Computer.HardwareID = Hardware.HardwareID WHERE Model = ?', [Model])
         .then(rows => {
             graphicsCardOptions = rows;
-            graphicsCardOptions[graphicsCardOptions.length] = {VCName: 'None'};
-            graphicsCardOptions[graphicsCardOptions.length] = {VCName: 'Add a New Option'};
+            graphicsCardOptions[graphicsCardOptions.length] = { VCName: 'None' };
+            graphicsCardOptions[graphicsCardOptions.length] = { VCName: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getGraphicsCardOptions', {graphicsCardOptions, location});
+            res.render('getGraphicsCardOptions', { graphicsCardOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getPeripheralModelOptions', function (req, res, next) {
+router.get('/getPeripheralModelOptions', function(req, res, next) {
     let Item = req.query.item;
     let database = new Database(config.getConfig());
 
@@ -1157,20 +1102,20 @@ router.get('/getPeripheralModelOptions', function (req, res, next) {
     database.query('SELECT DISTINCT Model FROM Peripheral WHERE Item = ? AND EmployeeID != 400 ORDER BY Model', [Item])
         .then(rows => {
             modelOptions = rows;
-            modelOptions[modelOptions.length] = {Model: 'None'};
-            modelOptions[modelOptions.length] = {Model: 'Add a New Option'};
+            modelOptions[modelOptions.length] = { Model: 'None' };
+            modelOptions[modelOptions.length] = { Model: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getModelOptions', {modelOptions, location});
+            res.render('getModelOptions', { modelOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/getItemOptions', function (req, res, next) {
+router.get('/getItemOptions', function(req, res, next) {
     let Make = req.query.make;
     let database = new Database(config.getConfig());
 
@@ -1179,20 +1124,20 @@ router.get('/getItemOptions', function (req, res, next) {
     database.query('SELECT DISTINCT Item FROM Peripheral WHERE Make = ? AND EmployeeID != 400 ORDER BY Item', [Make])
         .then(rows => {
             itemOptions = rows;
-            itemOptions[itemOptions.length] = {Item: 'None'};
-            itemOptions[itemOptions.length] = {Item: 'Add a New Option'};
+            itemOptions[itemOptions.length] = { Item: 'None' };
+            itemOptions[itemOptions.length] = { Item: 'Add a New Option' };
 
             database.close();
         })
         .then(() => {
-            res.render('getItemOptions', {itemOptions, location});
+            res.render('getItemOptions', { itemOptions, location });
         })
         .catch(err => {
             console.log(err);
         })
 });
 
-router.get('/employee', function (req, res, next) {
+router.get('/employee', function(req, res, next) {
     let database = new Database(config.getConfig());
     let EmployeeID = req.query.EmployeeID;
     let employee = {};
@@ -1224,7 +1169,7 @@ router.get('/employee', function (req, res, next) {
         })
 });
 
-router.get('/computer', function (req, res, next) {
+router.get('/computer', function(req, res, next) {
     let ICN = req.query.ICN;
     let makeOptions = {};
     let modelOptions = {};
@@ -1260,7 +1205,7 @@ router.get('/computer', function (req, res, next) {
         })
         .then(rows => {
             modelOptions = rows;
-            modelOptions[modelOptions.length] = {Model: 'Add a New Option'};
+            modelOptions[modelOptions.length] = { Model: 'Add a New Option' };
             return database.query('SELECT * FROM Hardware WHERE HardwareID = ' + computer.HardwareID);
         })
         .then(rows => {
@@ -1291,7 +1236,7 @@ router.get('/computer', function (req, res, next) {
         });
 });
 
-router.get('/monitor', function (req, res, next) {
+router.get('/monitor', function(req, res, next) {
     let ICN = req.query.ICN;
     let makeOptions = {};
     let modelOptions = {};
@@ -1339,7 +1284,7 @@ router.get('/monitor', function (req, res, next) {
         });
 });
 
-router.get('/printer', function (req, res, next) {
+router.get('/printer', function(req, res, next) {
     let ICN = req.query.ICN;
     let makeOptions = {};
     let modelOptions = {};
@@ -1520,7 +1465,7 @@ router.get('/printer', function (req, res, next) {
         });
 });
 
-router.get('/peripheral', function (req, res, next) {
+router.get('/peripheral', function(req, res, next) {
     let ICN = req.query.ICN;
     let makeOptions = {};
     let modelOptions = {};
@@ -1574,7 +1519,7 @@ router.get('/peripheral', function (req, res, next) {
         });
 });
 
-router.get('/newPeripheral', function (req, res, next) {
+router.get('/newPeripheral', function(req, res, next) {
     let ICN = 0;
     let EmployeeID = parseInt(req.query.EmployeeID);
     let makeOptions = {};
@@ -1588,8 +1533,8 @@ router.get('/newPeripheral', function (req, res, next) {
     database.query('SELECT DISTINCT Make FROM Peripheral ORDER BY Make')
         .then(rows => {
             makeOptions = rows;
-            makeOptions[makeOptions.length] = {Make: 'None'};
-            makeOptions[makeOptions.length] = {Make: 'Add a New Option'};
+            makeOptions[makeOptions.length] = { Make: 'None' };
+            makeOptions[makeOptions.length] = { Make: 'Add a New Option' };
             return database.query('Select * FROM Employee ORDER BY LastName');
         })
         .then(rows => {
@@ -1606,14 +1551,14 @@ router.get('/newPeripheral', function (req, res, next) {
         })
         .then(rows => {
             modelOptions = rows;
-            modelOptions[modelOptions.length] = {Model: 'None'};
-            modelOptions[modelOptions.length] = {Model: 'Add a New Option'};
+            modelOptions[modelOptions.length] = { Model: 'None' };
+            modelOptions[modelOptions.length] = { Model: 'Add a New Option' };
             return database.query('SELECT DISTINCT Item FROM Peripheral ORDER BY Item')
         })
         .then(rows => {
             itemOptions = rows;
-            itemOptions[itemOptions.length] = {Item: 'None'};
-            itemOptions[itemOptions.length] = {Item: 'Add a New Option'};
+            itemOptions[itemOptions.length] = { Item: 'None' };
+            itemOptions[itemOptions.length] = { Item: 'Add a New Option' };
             return database.close();
         })
         .then(() => {
@@ -1636,13 +1581,13 @@ router.get('/newPeripheral', function (req, res, next) {
         });
 });
 
-router.get('/newComputer', function (req, res, next) {
+router.get('/newComputer', function(req, res, next) {
     let ICN = 0;
     let EmployeeID = parseInt(req.query.EmployeeID);
     let employee = {};
     let employees = {};
     let makeOptions = {};
-    let modelOptions = {0: {Model: "Please choose a Make"}, 1: {Model: "Add a New Option"}};
+    let modelOptions = { 0: { Model: "Please choose a Make" }, 1: { Model: "Add a New Option" } };
     let typeOptions = {};
     let processorTypeOptions = {};
     let processorSpeedOptions = {};
@@ -1662,13 +1607,13 @@ router.get('/newComputer', function (req, res, next) {
         })
         .then(rows => {
             makeOptions = rows;
-            makeOptions[makeOptions.length] = {Make: 'None'};
-            makeOptions[makeOptions.length] = {Make: 'Add a New Option'};
+            makeOptions[makeOptions.length] = { Make: 'None' };
+            makeOptions[makeOptions.length] = { Make: 'Add a New Option' };
             return database.query('Select DISTINCT Type FROM Computer ORDER BY Type');
         })
         .then(rows => {
             typeOptions = rows;
-            typeOptions[typeOptions.length] = {Type: 'None'};
+            typeOptions[typeOptions.length] = { Type: 'None' };
             return database.query('Select * FROM Employee ORDER BY lastName');
         })
         .then(rows => {
@@ -1677,36 +1622,36 @@ router.get('/newComputer', function (req, res, next) {
         })
         .then(rows => {
             processorTypeOptions = rows;
-            processorTypeOptions[processorTypeOptions.length] = {ProcessorType: 'None'};
-            processorTypeOptions[processorTypeOptions.length] = {ProcessorType: 'Add a New Option'};
+            processorTypeOptions[processorTypeOptions.length] = { ProcessorType: 'None' };
+            processorTypeOptions[processorTypeOptions.length] = { ProcessorType: 'Add a New Option' };
             return database.query('SELECT DISTINCT ProcessorSpeed FROM Hardware join Computer on Computer.HardwareID = Hardware.HardwareID where Computer.EmployeeID != 400 ORDER BY ProcessorSpeed;')
 
         })
         .then(rows => {
             processorSpeedOptions = rows;
-            processorSpeedOptions[processorSpeedOptions.length] = {ProcessorSpeed: 'None'};
-            processorSpeedOptions[processorSpeedOptions.length] = {ProcessorSpeed: 'Add a New Option'};
+            processorSpeedOptions[processorSpeedOptions.length] = { ProcessorSpeed: 'None' };
+            processorSpeedOptions[processorSpeedOptions.length] = { ProcessorSpeed: 'Add a New Option' };
             return database.query('SELECT DISTINCT Memory FROM Hardware join Computer on Computer.HardwareID = Hardware.HardwareID where Computer.EmployeeID != 400 ORDER BY Memory;')
 
         })
         .then(rows => {
             memoryOptions = rows;
-            memoryOptions[memoryOptions.length] = {Memory: 'None'};
-            memoryOptions[memoryOptions.length] = {Memory: 'Add a New Option'};
+            memoryOptions[memoryOptions.length] = { Memory: 'None' };
+            memoryOptions[memoryOptions.length] = { Memory: 'Add a New Option' };
             return database.query('SELECT DISTINCT HardDrive FROM Hardware join Computer on Computer.HardwareID = Hardware.HardwareID where Computer.EmployeeID != 400 ORDER BY HardDrive;')
 
         })
         .then(rows => {
             hardDriveOptions = rows;
-            hardDriveOptions[hardDriveOptions.length] = {HardDrive: 'None'};
-            hardDriveOptions[hardDriveOptions.length] = {HardDrive: 'Add a New Option'};
+            hardDriveOptions[hardDriveOptions.length] = { HardDrive: 'None' };
+            hardDriveOptions[hardDriveOptions.length] = { HardDrive: 'Add a New Option' };
             return database.query('SELECT DISTINCT VCName FROM Hardware join Computer on Computer.HardwareID = Hardware.HardwareID where Computer.EmployeeID != 400 ORDER BY VCName;')
 
         })
         .then(rows => {
             graphicsCardOptions = rows;
-            graphicsCardOptions[graphicsCardOptions.length] = {VCName: 'None'};
-            graphicsCardOptions[graphicsCardOptions.length] = {VCName: 'Add a New Option'};
+            graphicsCardOptions[graphicsCardOptions.length] = { VCName: 'None' };
+            graphicsCardOptions[graphicsCardOptions.length] = { VCName: 'Add a New Option' };
             return database.close();
         })
         .then(() => {
@@ -1734,7 +1679,7 @@ router.get('/newComputer', function (req, res, next) {
         })
 });
 
-router.get('/newMonitor', function (req, res, next) {
+router.get('/newMonitor', function(req, res, next) {
     let ICN = 0;
     let EmployeeID = parseInt(req.query.EmployeeID);
     let makeOptions = {};
@@ -1748,8 +1693,8 @@ router.get('/newMonitor', function (req, res, next) {
     database.query('SELECT DISTINCT Make FROM Monitor')
         .then(rows => {
             makeOptions = rows;
-            makeOptions[makeOptions.length] = {Make: 'None'};
-            makeOptions[makeOptions.length] = {Make: 'Add a New Option'};
+            makeOptions[makeOptions.length] = { Make: 'None' };
+            makeOptions[makeOptions.length] = { Make: 'Add a New Option' };
             return database.query('Select * FROM Employee ORDER BY LastName');
         })
         .then(rows => {
@@ -1762,8 +1707,8 @@ router.get('/newMonitor', function (req, res, next) {
         })
         .then(rows => {
             modelOptions = rows;
-            modelOptions[modelOptions.length] = {Model: 'None'};
-            modelOptions[modelOptions.length] = {Model: 'Add a New Option'};
+            modelOptions[modelOptions.length] = { Model: 'None' };
+            modelOptions[modelOptions.length] = { Model: 'Add a New Option' };
             return database.query('SELECT * FROM Monitor ORDER BY ICN DESC LIMIT 1');
         })
         .then(rows => {
@@ -1789,7 +1734,7 @@ router.get('/newMonitor', function (req, res, next) {
         });
 });
 
-router.get('/newPrinter', function (req, res, next) {
+router.get('/newPrinter', function(req, res, next) {
     let ICN = 0;
     let EmployeeID = parseInt(req.query.EmployeeID);
     let makeOptions = {};
@@ -1802,8 +1747,8 @@ router.get('/newPrinter', function (req, res, next) {
     database.query('SELECT DISTINCT Make FROM Printer')
         .then(rows => {
             makeOptions = rows;
-            makeOptions[makeOptions.length] = {Make: 'None'};
-            makeOptions[makeOptions.length] = {Make: 'Add a New Option'};
+            makeOptions[makeOptions.length] = { Make: 'None' };
+            makeOptions[makeOptions.length] = { Make: 'Add a New Option' };
             return database.query('Select * FROM Employee ORDER BY LastName');
         })
         .then(rows => {
@@ -1816,8 +1761,8 @@ router.get('/newPrinter', function (req, res, next) {
         })
         .then(rows => {
             modelOptions = rows;
-            modelOptions[modelOptions.length] = {Model: 'None'};
-            modelOptions[modelOptions.length] = {Model: 'Add a New Option'};
+            modelOptions[modelOptions.length] = { Model: 'None' };
+            modelOptions[modelOptions.length] = { Model: 'Add a New Option' };
             return database.query('SELECT * FROM Printer ORDER BY ICN DESC LIMIT 1');
         })
         .then(rows => {
@@ -1843,7 +1788,7 @@ router.get('/newPrinter', function (req, res, next) {
         });
 });
 
-router.get('/download/rotation', function (req, res, next) {
+router.get('/download/rotation', function(req, res, next) {
     let rotation = req.query.rotation;
     let Rows = {};
 
@@ -1854,10 +1799,10 @@ router.get('/download/rotation', function (req, res, next) {
             return database.close();
         })
         .then(() => {
-            let csvStream = csv.createWriteStream({headers: true}),
+            let csvStream = csv.createWriteStream({ headers: true }),
                 writableStream = fs.createWriteStream("Rotation " + rotation + ".csv");
 
-            writableStream.on("finish", function () {
+            writableStream.on("finish", function() {
                 console.log("DONE!");
                 let file = __dirname + '/../Rotation ' + rotation + '.csv';
                 res.download(file);
@@ -1873,7 +1818,7 @@ router.get('/download/rotation', function (req, res, next) {
 
 });
 
-router.get('/download/peripherals', function (req, res, next) {
+router.get('/download/peripherals', function(req, res, next) {
     let Rows = {};
     let query = 'SELECT * FROM Peripheral LEFT JOIN Employee on Peripheral.EmployeeID = Employee.EmployeeID';
     if (req.query.remove) {
@@ -1910,20 +1855,15 @@ router.get('/download/peripherals', function (req, res, next) {
 
     if (req.query.sortby === 'ICN') {
         query += ' Order BY ICN';
-    }
-    else if (req.query.sortby === 'EmployeeID') {
+    } else if (req.query.sortby === 'EmployeeID') {
         query += ' ORDER BY EmployeeID';
-    }
-    else if (req.query.sortby === 'Make') {
+    } else if (req.query.sortby === 'Make') {
         query += ' ORDER BY Make';
-    }
-    else if (req.query.sortby === 'firstName') {
+    } else if (req.query.sortby === 'firstName') {
         query += ' ORDER BY firstName';
-    }
-    else if (req.query.sortby === 'lastName') {
+    } else if (req.query.sortby === 'lastName') {
         query += ' ORDER BY lastName';
-    }
-    else {
+    } else {
         query += ' Order BY ICN';
     }
     let database = new Database(config.getConfig());
@@ -1934,10 +1874,10 @@ router.get('/download/peripherals', function (req, res, next) {
             return database.close();
         })
         .then(() => {
-            let csvStream = csv.createWriteStream({headers: true}),
+            let csvStream = csv.createWriteStream({ headers: true }),
                 writableStream = fs.createWriteStream("Peripherals.csv");
 
-            writableStream.on("finish", function () {
+            writableStream.on("finish", function() {
                 console.log("DONE!");
                 let file = __dirname + '/../bin/Peripherals.csv';
                 console.log(file);
@@ -1954,7 +1894,7 @@ router.get('/download/peripherals', function (req, res, next) {
 
 });
 
-router.get('/download/printers', function (req, res, next) {
+router.get('/download/printers', function(req, res, next) {
     let Rows = {};
     let database = new Database(config.getConfig());
 
@@ -1993,26 +1933,19 @@ router.get('/download/printers', function (req, res, next) {
 
     if (req.query.sortby === 'ICN') {
         query += ' Order BY ICN';
-    }
-    else if (req.query.sortby === 'EmployeeID') {
+    } else if (req.query.sortby === 'EmployeeID') {
         query += ' ORDER BY EmployeeID';
-    }
-    else if (req.query.sortby === 'Make') {
+    } else if (req.query.sortby === 'Make') {
         query += ' ORDER BY Make';
-    }
-    else if (req.query.sortby === 'Model') {
+    } else if (req.query.sortby === 'Model') {
         query += ' ORDER BY Model';
-    }
-    else if (req.query.sortby === 'firstName') {
+    } else if (req.query.sortby === 'firstName') {
         query += ' ORDER BY firstName';
-    }
-    else if (req.query.sortby === 'lastName') {
+    } else if (req.query.sortby === 'lastName') {
         query += ' ORDER BY lastName';
-    }
-    else if (req.query.sortby === 'dateAcquired') {
+    } else if (req.query.sortby === 'dateAcquired') {
         query += ' ORDER BY DateAcquired';
-    }
-    else {
+    } else {
         query += ' Order BY ICN';
     }
     console.log(query);
@@ -2023,10 +1956,10 @@ router.get('/download/printers', function (req, res, next) {
             return database.close();
         })
         .then(() => {
-            let csvStream = csv.createWriteStream({headers: true}),
+            let csvStream = csv.createWriteStream({ headers: true }),
                 writableStream = fs.createWriteStream("Printers.csv");
 
-            writableStream.on("finish", function () {
+            writableStream.on("finish", function() {
                 console.log("DONE!");
                 let file = __dirname + '/../bin/Printers.csv';
                 console.log(file);
@@ -2043,7 +1976,7 @@ router.get('/download/printers', function (req, res, next) {
 
 });
 
-router.get('/download/monitors', function (req, res, next) {
+router.get('/download/monitors', function(req, res, next) {
     let Rows = {};
     let query = 'SELECT * FROM Monitor LEFT JOIN Employee on Monitor.EmployeeID = Employee.employeeId';
     if (req.query.remove) {
@@ -2080,20 +2013,15 @@ router.get('/download/monitors', function (req, res, next) {
 
     if (req.query.sortby === 'ICN') {
         query += ' Order BY ICN';
-    }
-    else if (req.query.sortby === 'EmployeeID') {
+    } else if (req.query.sortby === 'EmployeeID') {
         query += ' ORDER BY EmployeeID';
-    }
-    else if (req.query.sortby === 'Make') {
+    } else if (req.query.sortby === 'Make') {
         query += ' ORDER BY Make';
-    }
-    else if (req.query.sortby === 'firstName') {
+    } else if (req.query.sortby === 'firstName') {
         query += ' ORDER BY firstName';
-    }
-    else if (req.query.sortby === 'lastName') {
+    } else if (req.query.sortby === 'lastName') {
         query += ' ORDER BY lastName';
-    }
-    else {
+    } else {
         query += ' Order BY ICN';
     }
     let database = new Database(config.getConfig());
@@ -2104,10 +2032,10 @@ router.get('/download/monitors', function (req, res, next) {
             return database.close();
         })
         .then(() => {
-            let csvStream = csv.createWriteStream({headers: true}),
+            let csvStream = csv.createWriteStream({ headers: true }),
                 writableStream = fs.createWriteStream("Monitors.csv");
 
-            writableStream.on("finish", function () {
+            writableStream.on("finish", function() {
                 console.log("DONE!");
                 let file = __dirname + '/../bin/Monitors.csv';
                 console.log(file);
@@ -2124,7 +2052,7 @@ router.get('/download/monitors', function (req, res, next) {
 
 });
 
-router.get('/download/computers', function (req, res, next) {
+router.get('/download/computers', function(req, res, next) {
     let database = new Database(config.getConfig());
     let computers = {};
     let user = JSON.parse(vault.read(req));
@@ -2171,11 +2099,9 @@ router.get('/download/computers', function (req, res, next) {
                 for (let filter in filters) {
                     if (filters[filter].includes('EmployeeID') || filters[filter].includes('RotationGroup')) {
                         query += 'Employee.'
-                    }
-                    else if (filters[filter].includes('Processor') || filters[filter].includes('Memory') || filters[filter].includes('HardDrive') || filters[filter].includes('VCName') || filters[filter].includes('Touch') || filters[filter].includes('ScreenResolution')) {
+                    } else if (filters[filter].includes('Processor') || filters[filter].includes('Memory') || filters[filter].includes('HardDrive') || filters[filter].includes('VCName') || filters[filter].includes('Touch') || filters[filter].includes('ScreenResolution')) {
                         query += 'Hardware.'
-                    }
-                    else {
+                    } else {
                         query += 'Computer.'
                     }
                     query += filters[filter];
@@ -2186,56 +2112,42 @@ router.get('/download/computers', function (req, res, next) {
 
             if (req.query.sortby === 'ICN') {
                 query += ' Order BY ICN';
-            }
-            else if (req.query.sortby === 'EmployeeID') {
+            } else if (req.query.sortby === 'EmployeeID') {
                 query += ' ORDER BY EmployeeID';
-            }
-            else if (req.query.sortby === 'Make') {
+            } else if (req.query.sortby === 'Make') {
                 query += ' ORDER BY Make';
-            }
-            else if (req.query.sortby === 'Model') {
+            } else if (req.query.sortby === 'Model') {
                 query += ' ORDER BY Model';
-            }
-            else if (req.query.sortby === 'firstname') {
+            } else if (req.query.sortby === 'firstname') {
                 query += ' ORDER BY FirstName';
-            }
-            else if (req.query.sortby === 'lastname') {
+            } else if (req.query.sortby === 'lastname') {
                 query += ' ORDER BY LastName';
-            }
-            else if (req.query.sortby === 'dateAcquired') {
+            } else if (req.query.sortby === 'dateAcquired') {
                 query += ' ORDER BY DateAcquired';
-            }
-            else if (req.query.sortby === 'processorType') {
+            } else if (req.query.sortby === 'processorType') {
                 query += ' ORDER BY ProcessorType';
-            }
-            else if (req.query.sortby === 'processorSpeed') {
+            } else if (req.query.sortby === 'processorSpeed') {
                 query += ' ORDER BY ProcessorSpeed';
-            }
-            else if (req.query.sortby === 'memory') {
+            } else if (req.query.sortby === 'memory') {
                 query += ' ORDER BY Memory';
-            }
-            else if (req.query.sortby === 'hardDrive') {
+            } else if (req.query.sortby === 'hardDrive') {
                 query += ' ORDER BY HardDrive';
-            }
-            else if (req.query.sortby === 'vcName') {
+            } else if (req.query.sortby === 'vcName') {
                 query += ' ORDER BY VCName';
-            }
-            else {
+            } else {
                 query += ' Order BY ICN';
             }
 
             if (req.query.order === 'asc') {
                 query += ' ASC';
-            }
-            else if (req.query.order === 'desc') {
+            } else if (req.query.order === 'desc') {
                 query += ' DESC';
             }
             console.log(query);
 
             if (req.query.hardware === 'true') {
                 hardware = true;
-            }
-            else if (req.query.hardware === 'false') {
+            } else if (req.query.hardware === 'false') {
                 hardware = false;
             }
 
@@ -2252,10 +2164,10 @@ router.get('/download/computers', function (req, res, next) {
             return database.query('UPDATE Filters SET filters = "' + filters.toString().replace('"', '\\"') + '" WHERE user = \'' + user.netId + '\'');
         })
         .then(() => {
-            let csvStream = csv.createWriteStream({headers: true}),
+            let csvStream = csv.createWriteStream({ headers: true }),
                 writableStream = fs.createWriteStream("Computers.csv");
 
-            writableStream.on("finish", function () {
+            writableStream.on("finish", function() {
                 console.log("DONE!");
                 let file = __dirname + '/../bin/Computers.csv';
                 console.log(file);
@@ -2272,7 +2184,7 @@ router.get('/download/computers', function (req, res, next) {
 
 });
 
-router.get('/download/employees', function (req, res, next) {
+router.get('/download/employees', function(req, res, next) {
     let Rows = {};
     let query = 'SELECT * FROM Employee';
     if (req.query.remove) {
@@ -2309,17 +2221,13 @@ router.get('/download/employees', function (req, res, next) {
 
     if (req.query.sortby === 'EmployeeID') {
         query += ' ORDER BY EmployeeID';
-    }
-    else if (req.query.sortby === 'Make') {
+    } else if (req.query.sortby === 'Make') {
         query += ' ORDER BY Make';
-    }
-    else if (req.query.sortby === 'firstName') {
+    } else if (req.query.sortby === 'firstName') {
         query += ' ORDER BY firstName';
-    }
-    else if (req.query.sortby === 'lastName') {
+    } else if (req.query.sortby === 'lastName') {
         query += ' ORDER BY lastName';
-    }
-    else {
+    } else {
         query += ' Order BY EmployeeID';
     }
     let database = new Database(config.getConfig());
@@ -2330,10 +2238,10 @@ router.get('/download/employees', function (req, res, next) {
             return database.close();
         })
         .then(() => {
-            let csvStream = csv.createWriteStream({headers: true}),
+            let csvStream = csv.createWriteStream({ headers: true }),
                 writableStream = fs.createWriteStream("Employees.csv");
 
-            writableStream.on("finish", function () {
+            writableStream.on("finish", function() {
                 console.log("DONE!");
                 let file = __dirname + '/../bin/Employees.csv';
                 console.log(file);
@@ -2350,28 +2258,28 @@ router.get('/download/employees', function (req, res, next) {
 
 });
 
-router.get('/tables', function (req, res, next) {
-    res.render('tables', {title: 'Tables', user: JSON.parse(vault.read(req)), location})
+router.get('/tables', function(req, res, next) {
+    res.render('tables', { title: 'Tables', user: JSON.parse(vault.read(req)), location })
 });
 
-router.get('/login', function (req, res) {
+router.get('/login', function(req, res) {
     res.render('login', {
         location
     });
 });
 
-router.get('/logout', function (req, res) {
+router.get('/logout', function(req, res) {
     vault.flush();
     res.render('login', {
         URL
     });
 });
 
-router.get('/', function (req, res, next) {
+router.get('/', function(req, res, next) {
     res.redirect(location + '/employeeTable');
 });
 
-router.get('/jsbSurplus', function (req, res, next) {
+router.get('/jsbSurplus', function(req, res, next) {
     let employeeId = 300;
     let employeeRows = {};
     let computerRows = {};
@@ -2421,7 +2329,7 @@ router.get('/jsbSurplus', function (req, res, next) {
         });
 });
 
-router.get('/updateDates', function (req, res, next) {
+router.get('/updateDates', function(req, res, next) {
     let database = new Database(config.getConfig());
     let datesAcquired = {};
     let stuff = '';
@@ -2455,14 +2363,14 @@ router.get('/updateDates', function (req, res, next) {
             }
         })
         .then(() => {
-            res.render('home', {title: stuff, user: 'McKay'})
+            res.render('home', { title: stuff, user: 'McKay' })
         })
         .catch(err => {
             console.log(err);
         });
 });
 
-router.get('/updatePageCounts', function (req, res, next) {
+router.get('/updatePageCounts', function(req, res, next) {
     let database = new Database(config.getConfig());
     let printers = {};
     let queries = [];
@@ -2659,7 +2567,7 @@ router.get('/updatePageCounts', function (req, res, next) {
             let pool = mysql.createPool(config.getConfig());
 
             for (let query of queries) {
-                pool.query(query, function (err, info) {
+                pool.query(query, function(err, info) {
                     if (err) {
                         console.log(query);
                     }
@@ -2667,7 +2575,7 @@ router.get('/updatePageCounts', function (req, res, next) {
             }
         })
         .then(() => {
-            res.render('home', {title: 'test', user: 'McKay'})
+            res.render('home', { title: 'test', user: 'McKay' })
 
         })
         .catch(err => {
@@ -2675,7 +2583,7 @@ router.get('/updatePageCounts', function (req, res, next) {
         });
 });
 
-router.get('/search', function (req, res, next) {
+router.get('/search', function(req, res, next) {
     console.log(req.query.searchTerms);
     let searchTerms = req.query.searchTerms;
     if (searchTerms[searchTerms.length - 1] === ' ') {
@@ -2685,8 +2593,7 @@ router.get('/search', function (req, res, next) {
     let filterQuery = 'SELECT * FROM Filters WHERE user = \'' + user.netId + '\'';
     if (isNaN(searchTerms)) {
         searchTerms = "%" + searchTerms + "%";
-    }
-    else {
+    } else {
         searchTerms = parseInt(searchTerms);
     }
     let database = new Database(config.getConfig());
@@ -2729,20 +2636,15 @@ router.get('/search', function (req, res, next) {
         .then(() => {
             if (employeeRows.length === 1 && !computerRows.length && !monitorRows.length && !printerRows.length && !peripheralRows.length) {
                 res.redirect(location + '/card?EmployeeID=' + employeeRows[0].EmployeeID);
-            }
-            else if (computerRows.length === 1 && !employeeRows.length && !monitorRows.length && !printerRows.length && !peripheralRows.length) {
+            } else if (computerRows.length === 1 && !employeeRows.length && !monitorRows.length && !printerRows.length && !peripheralRows.length) {
                 res.redirect(location + '/computer?ICN=' + computerRows[0].ICN + "&EmployeeID=" + computerRows[0].EmployeeID);
-            }
-            else if (monitorRows.length === 1 && !employeeRows.length && !computerRows.length && !printerRows.length && !peripheralRows.length) {
+            } else if (monitorRows.length === 1 && !employeeRows.length && !computerRows.length && !printerRows.length && !peripheralRows.length) {
                 res.redirect(location + '/monitor?ICN=' + monitorRows[0].ICN + "&EmployeeID=" + monitorRows[0].EmployeeID);
-            }
-            else if (printerRows.length === 1 && !employeeRows.length && !computerRows.length && !monitorRows.length && !peripheralRows.length) {
+            } else if (printerRows.length === 1 && !employeeRows.length && !computerRows.length && !monitorRows.length && !peripheralRows.length) {
                 res.redirect(location + '/printer?ICN=' + printerRows[0].ICN + "&EmployeeID=" + printerRows[0].EmployeeID);
-            }
-            else if (peripheralRows.length === 1 && !employeeRows.length && !computerRows.length && !monitorRows.length && !printerRows.length) {
+            } else if (peripheralRows.length === 1 && !employeeRows.length && !computerRows.length && !monitorRows.length && !printerRows.length) {
                 res.redirect(location + '/peripheral?ICN=' + peripheralRows[0].ICN + "&EmployeeID=" + peripheralRows[0].EmployeeID);
-            }
-            else {
+            } else {
                 res.render('card', {
                     employees: employeeRows,
                     computers: computerRows,
@@ -2766,7 +2668,7 @@ router.get('/search', function (req, res, next) {
 
 });
 
-router.get('/showOptions', function (req, res, next) {
+router.get('/showOptions', function(req, res, next) {
     let database = new Database(config.getConfig());
     let jsbStorage = req.query.jsbStorage;
     let user = JSON.parse(vault.read(req));
@@ -2774,14 +2676,11 @@ router.get('/showOptions', function (req, res, next) {
     let properTable = '';
     if (table === 'computer') {
         properTable = 'Computer';
-    }
-    else if (table === 'monitor') {
+    } else if (table === 'monitor') {
         properTable = 'Monitor';
-    }
-    else if (table === 'peripheral') {
+    } else if (table === 'peripheral') {
         properTable = 'Peripheral';
-    }
-    else if (table === 'printer') {
+    } else if (table === 'printer') {
         properTable = 'Printer';
     }
     database.query('SELECT * FROM Filters WHERE User = \'' + user.netId + '\'')
@@ -2802,7 +2701,7 @@ router.get('/showOptions', function (req, res, next) {
 
 });
 
-router.get('/finnaSurplus', function (req, res, next) {
+router.get('/finnaSurplus', function(req, res, next) {
     let database = new Database(config.getConfig());
     let ICN = req.query.ICN;
     let table = req.query.table;
@@ -2816,7 +2715,7 @@ router.get('/finnaSurplus', function (req, res, next) {
         });
 });
 
-router.get('/undoFinnaSurplus', function (req, res, next) {
+router.get('/undoFinnaSurplus', function(req, res, next) {
     let database = new Database(config.getConfig());
     let ICN = req.query.ICN;
     let table = req.query.table;
@@ -2830,7 +2729,7 @@ router.get('/undoFinnaSurplus', function (req, res, next) {
         });
 });
 
-router.get('/updateInventory', function (req, res, next) {
+router.get('/updateInventory', function(req, res, next) {
     let ICN = req.query.ICN;
     let database = new Database(config.getConfig());
     let date = new Date();
@@ -2858,12 +2757,10 @@ router.get('/updateInventory', function (req, res, next) {
                 if (inventoried.length > 1) {
                     let oldDate = new Date(inventoried[inventoried.length - 2].CurrentDate);
                     res.send(monthNames[oldDate.getMonth()] + ' ' + oldDate.getFullYear());
-                }
-                else {
+                } else {
                     res.send('Never');
                 }
-            }
-            else {
+            } else {
                 res.send(monthNames[date.getMonth()] + ' ' + date.getFullYear());
             }
         })
@@ -2873,7 +2770,7 @@ router.get('/updateInventory', function (req, res, next) {
 
 });
 
-router.get('/email', function (req, res, next) {
+router.get('/email', function(req, res, next) {
     // let user = JSON.parse(vault.read(req));
     let employeeId = parseInt(req.query.EmployeeID);
     let employeeRows = {};
@@ -2887,7 +2784,7 @@ router.get('/email', function (req, res, next) {
     let inventoriedArr = [];
     let notInventoriedArr = [];
     let total = [];
-    let showOptions = {Item: true, ICN: true, Make: true, Model: true, SerialNumber: true};
+    let showOptions = { Item: true, ICN: true, Make: true, Model: true, SerialNumber: true };
     let peripheralShowOptions = {
         ICN: true,
         SerialNumber: true,
@@ -2899,8 +2796,7 @@ router.get('/email', function (req, res, next) {
     };
     if (!req.query.surplussing || req.query.surplussing === '') {
         surplussing = 'false';
-    }
-    else {
+    } else {
         surplussing = req.query.surplussing;
     }
 
@@ -2925,12 +2821,10 @@ router.get('/email', function (req, res, next) {
                     computer['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     if (date.getFullYear() === currentDate.getFullYear() || date.getFullYear() === currentDate.getFullYear() - 1) {
                         computer.order = 1;
-                    }
-                    else {
+                    } else {
                         computer.order = 0;
                     }
-                }
-                else {
+                } else {
                     computer['MAX(Inventory.CurrentDate)'] = 'Never';
                     computer.order = 0;
                 }
@@ -2951,12 +2845,10 @@ router.get('/email', function (req, res, next) {
                     monitor['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     if (date.getFullYear() === currentDate.getFullYear() || date.getFullYear() === currentDate.getFullYear() - 1) {
                         monitor.order = 1;
-                    }
-                    else {
+                    } else {
                         monitor.order = 0;
                     }
-                }
-                else {
+                } else {
                     monitor['MAX(Inventory.CurrentDate)'] = 'Never';
                     monitor.order = 0;
                 }
@@ -2977,12 +2869,10 @@ router.get('/email', function (req, res, next) {
                     printer['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     if (date.getFullYear() === currentDate.getFullYear() || date.getFullYear() === currentDate.getFullYear() - 1) {
                         printer.order = 1;
-                    }
-                    else {
+                    } else {
                         printer.order = 0;
                     }
-                }
-                else {
+                } else {
                     printer['MAX(Inventory.CurrentDate)'] = 'Never';
                     printer.order = 0;
                 }
@@ -3002,12 +2892,10 @@ router.get('/email', function (req, res, next) {
                     peripheral['MAX(Inventory.CurrentDate)'] = monthNames[date.getMonth()] + ' ' + date.getFullYear();
                     if (date.getFullYear() === currentDate.getFullYear() || date.getFullYear() === currentDate.getFullYear() - 1) {
                         peripheral.order = 1;
-                    }
-                    else {
+                    } else {
                         peripheral.order = 0;
                     }
-                }
-                else {
+                } else {
                     peripheral['MAX(Inventory.CurrentDate)'] = 'Never';
                     peripheral.order = 0;
                 }
@@ -3019,15 +2907,14 @@ router.get('/email', function (req, res, next) {
             for (let row of total) {
                 if (row.order === 1) {
                     inventoriedArr.push(row);
-                }
-                else {
+                } else {
                     notInventoriedArr.push(row);
                 }
             }
-            inventoriedArr.sort(function (a, b) {
+            inventoriedArr.sort(function(a, b) {
                 return a.ICN - b.ICN;
             });
-            notInventoriedArr.sort(function (a, b) {
+            notInventoriedArr.sort(function(a, b) {
                 return a.ICN - b.ICN;
             });
         })
@@ -3035,9 +2922,8 @@ router.get('/email', function (req, res, next) {
             // do something with someRows and otherRows
             if (!notInventoriedArr.length) {
                 res.status(500);
-                res.render('error', {error: 'Everything has been inventoried'});
-            }
-            else {
+                res.render('error', { error: 'Everything has been inventoried' });
+            } else {
                 res.render('email', {
                     employee: employeeRows[0],
                     computers: computerRows,
@@ -3064,7 +2950,7 @@ router.get('/email', function (req, res, next) {
 
 });
 
-router.post('/showOptions', function (req, res, next) {
+router.post('/showOptions', function(req, res, next) {
     let database = new Database(config.getConfig());
     let user = JSON.parse(vault.read(req));
     let jsbStorage = req.body.jsbStorage;
@@ -3074,8 +2960,7 @@ router.post('/showOptions', function (req, res, next) {
         if (showOption !== 'table' && showOption !== 'jsbStorage') {
             if (req.body[showOption] === 'true') {
                 showOptions[showOption] = true;
-            }
-            else {
+            } else {
                 showOptions[showOption] = false;
             }
         }
@@ -3083,10 +2968,9 @@ router.post('/showOptions', function (req, res, next) {
 
     database.query('UPDATE Filters SET ' + table + 'ShowOptions = \'' + JSON.stringify(showOptions) + '\' WHERE User = \'' + user.netId + '\'')
         .then(rows => {
-            if(jsbStorage !== 'undefined'){
+            if (jsbStorage !== 'undefined') {
                 res.redirect(location + '/card?EmployeeID=300');
-            }
-            else {
+            } else {
                 res.redirect(location + '/' + table + 'Table');
             }
         })
@@ -3095,7 +2979,7 @@ router.post('/showOptions', function (req, res, next) {
         })
 });
 
-router.post('/newComputer', function (req, res, next) {
+router.post('/newComputer', function(req, res, next) {
     let database = new Database(config.getConfig());
     let hardwareId = -1;
     if (!req.body.homeCheckout) {
@@ -3109,16 +2993,16 @@ router.post('/newComputer', function (req, res, next) {
         .then(rows => {
             if (rows.length > 0) {
                 hardwareId = rows[0].HardwareID;
-            }
-            else
-                return database.query('INSERT INTO Hardware (ProcessorType, ProcessorSpeed, Memory, HardDrive, VCName, ScreenResolution, Touch) VALUES (?)', [[req.body.processorType, req.body.processorSpeed, req.body.memory, req.body.hardDrive, req.body.graphicsCard, req.body.screenResolution, req.body.touch]])
+            } else
+                return database.query('INSERT INTO Hardware (ProcessorType, ProcessorSpeed, Memory, HardDrive, VCName, ScreenResolution, Touch) VALUES (?)', [
+                    [req.body.processorType, req.body.processorSpeed, req.body.memory, req.body.hardDrive, req.body.graphicsCard, req.body.screenResolution, req.body.touch]
+                ])
         })
         .then(rows => {
             if (hardwareId === -1) {
                 hardwareId = rows.insertId;
             }
-            return database.query("INSERT INTO Computer (ICN, EmployeeID, Make, Model, SerialNumber, ServiceTag, HardwareID, ExpressServiceCode, Type, DateAcquired, Warranty, HomeCheckout, Notes, History) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
-                [req.body.icn, req.body.EmployeeID, req.body.make, req.body.model, req.body.serialNumber, req.body.serviceTag, hardwareId, req.body.expressServiceCode, req.body.type, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, ""])
+            return database.query("INSERT INTO Computer (ICN, EmployeeID, Make, Model, SerialNumber, ServiceTag, HardwareID, ExpressServiceCode, Type, DateAcquired, Warranty, HomeCheckout, Notes, History) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)", [req.body.icn, req.body.EmployeeID, req.body.make, req.body.model, req.body.serialNumber, req.body.serviceTag, hardwareId, req.body.expressServiceCode, req.body.type, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, ""])
 
         })
         .then(() => {
@@ -3138,13 +3022,15 @@ router.post('/newComputer', function (req, res, next) {
         });
 });
 
-router.post('/newMonitor', function (req, res, next) {
+router.post('/newMonitor', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
 
-    database.query('INSERT INTO Monitor (ICN, EmployeeID, Make, Model, Notes, SerialNumber, DateAcquired, Warranty, HomeCheckout, History) VALUES (?)', [[req.body.icn, req.body.employeeId, req.body.make, req.body.model, req.body.notes, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, ""]])
+    database.query('INSERT INTO Monitor (ICN, EmployeeID, Make, Model, Notes, SerialNumber, DateAcquired, Warranty, HomeCheckout, History) VALUES (?)', [
+            [req.body.icn, req.body.employeeId, req.body.make, req.body.model, req.body.notes, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, ""]
+        ])
         .then(rows => {
             if (rows)
                 console.log(rows);
@@ -3159,13 +3045,15 @@ router.post('/newMonitor', function (req, res, next) {
         });
 });
 
-router.post('/newPrinter', function (req, res, next) {
+router.post('/newPrinter', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
 
-    database.query('INSERT INTO Printer (ICN, EmployeeID, Make, Model, Notes, SerialNumber, DateAcquired, Warranty, History) VALUES (?)', [[req.body.icn, req.body.employeeId, req.body.make, req.body.model, req.body.notes, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, ""]])
+    database.query('INSERT INTO Printer (ICN, EmployeeID, Make, Model, Notes, SerialNumber, DateAcquired, Warranty, History) VALUES (?)', [
+            [req.body.icn, req.body.employeeId, req.body.make, req.body.model, req.body.notes, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, ""]
+        ])
         .then(rows => {
             if (rows)
                 console.log(rows);
@@ -3180,13 +3068,15 @@ router.post('/newPrinter', function (req, res, next) {
         });
 });
 
-router.post('/newPeripheral', function (req, res, next) {
+router.post('/newPeripheral', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
 
-    database.query('INSERT INTO Peripheral (ICN, EmployeeID, Item, Make, Model, Notes, SerialNumber, DateAcquired, Warranty, HomeCheckout, History) VALUES (?)', [[req.body.icn, req.body.employeeId, req.body.item, req.body.make, req.body.model, req.body.notes, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, ""]])
+    database.query('INSERT INTO Peripheral (ICN, EmployeeID, Item, Make, Model, Notes, SerialNumber, DateAcquired, Warranty, HomeCheckout, History) VALUES (?)', [
+            [req.body.icn, req.body.employeeId, req.body.item, req.body.make, req.body.model, req.body.notes, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, ""]
+        ])
         .then(rows => {
             if (rows) {
                 console.log(rows);
@@ -3203,7 +3093,7 @@ router.post('/newPeripheral', function (req, res, next) {
         });
 });
 
-router.post('/form', function (req, res, next) {
+router.post('/form', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
@@ -3211,8 +3101,7 @@ router.post('/form', function (req, res, next) {
     if (!req.body.touch) {
         req.body.touch = 'off';
     }
-    database.query("UPDATE Computer Set EmployeeID = ?, Make = ?, Model = ?, SerialNumber = ?, ServiceTag = ?, ExpressServiceCode = ?, Type = ?, DateAcquired = ?, Warranty = ?, HomeCheckout = ?, Notes = ?, History = ? WHERE ICN = ?",
-        [req.body.employeeId, req.body.make, req.body.model, req.body.serialNumber, req.body.serviceTag, req.body.expressServiceCode, req.body.type, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, req.body.history, req.body.icn])
+    database.query("UPDATE Computer Set EmployeeID = ?, Make = ?, Model = ?, SerialNumber = ?, ServiceTag = ?, ExpressServiceCode = ?, Type = ?, DateAcquired = ?, Warranty = ?, HomeCheckout = ?, Notes = ?, History = ? WHERE ICN = ?", [req.body.employeeId, req.body.make, req.body.model, req.body.serialNumber, req.body.serviceTag, req.body.expressServiceCode, req.body.type, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, req.body.history, req.body.icn])
         .then(rows => {
             return database.query('SELECT * FROM Hardware WHERE ProcessorType = ? and ProcessorSpeed = ? and Memory = ? and HardDrive = ? and VCName = ? and ScreenResolution = ? and Touch = ?', [req.body.processorType, req.body.processorSpeed, req.body.memory, req.body.hardDrive, req.body.graphicsCard, req.body.screenResolution, req.body.touch])
         })
@@ -3221,8 +3110,7 @@ router.post('/form', function (req, res, next) {
                 if (rows[0].HardwareID !== req.body.HardwareID) {
                     return database.query('UPDATE Computer Set HardwareID = ? WHERE ICN = ?', [rows[0].HardwareID, req.body.icn]);
                 }
-            }
-            else if (rows.length === 0) {
+            } else if (rows.length === 0) {
                 return database.query('INSERT INTO Hardware (ProcessorType, ProcessorSpeed, Memory, HardDrive, VCName, ScreenResolution, Touch) VALUES (?,?,?,?,?,?,?)', [req.body.processorType, req.body.processorSpeed, req.body.memory, req.body.hardDrive, req.body.graphicsCard, req.body.screenResolution, req.body.touch]);
             }
         })
@@ -3241,13 +3129,12 @@ router.post('/form', function (req, res, next) {
     // res.render('home', {title: 'Welcome', user: 'McKay'})
 });
 
-router.post('/monitor', function (req, res, next) {
+router.post('/monitor', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
-    database.query("UPDATE Monitor SET EmployeeID = ?, Make = ?, Model = ?, DateAcquired = ?, Warranty = ?, HomeCheckout = ?, Notes = ?, History = ? WHERE ICN = ?",
-        [req.body.employeeId, req.body.make, req.body.model, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, req.body.history, req.body.icn])
+    database.query("UPDATE Monitor SET EmployeeID = ?, Make = ?, Model = ?, DateAcquired = ?, Warranty = ?, HomeCheckout = ?, Notes = ?, History = ? WHERE ICN = ?", [req.body.employeeId, req.body.make, req.body.model, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, req.body.history, req.body.icn])
         .then(rows => {
             console.log(rows);
             return database.close();
@@ -3261,13 +3148,12 @@ router.post('/monitor', function (req, res, next) {
     // res.render('home', {title: 'Welcome', user: 'McKay'})
 });
 
-router.post('/peripheral', function (req, res, next) {
+router.post('/peripheral', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
-    database.query("UPDATE Peripheral SET EmployeeID = ?, Item = ?, Make = ?, Model = ?, SerialNumber = ?, DateAcquired = ?, Warranty = ?, HomeCheckout = ?, Notes = ?, History = ? WHERE ICN = ?",
-        [req.body.employeeId, req.body.item, req.body.make, req.body.model, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, req.body.history, req.body.icn])
+    database.query("UPDATE Peripheral SET EmployeeID = ?, Item = ?, Make = ?, Model = ?, SerialNumber = ?, DateAcquired = ?, Warranty = ?, HomeCheckout = ?, Notes = ?, History = ? WHERE ICN = ?", [req.body.employeeId, req.body.item, req.body.make, req.body.model, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.homeCheckout, req.body.notes, req.body.history, req.body.icn])
         .then(rows => {
             return database.close();
         })
@@ -3280,13 +3166,12 @@ router.post('/peripheral', function (req, res, next) {
     // res.render('home', {title: 'Welcome', user: 'McKay'})
 });
 
-router.post('/printer', function (req, res, next) {
+router.post('/printer', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
-    database.query("UPDATE Printer SET EmployeeID = ?, LesOlsonID = ?, Make = ?, Model = ?, SerialNumber = ?, DateAcquired = ?, Warranty = ?, Notes = ?, History = ? WHERE ICN = ?",
-        [req.body.employeeId, req.body.lesOlsonId, req.body.make, req.body.model, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.notes, req.body.history, req.body.icn])
+    database.query("UPDATE Printer SET EmployeeID = ?, LesOlsonID = ?, Make = ?, Model = ?, SerialNumber = ?, DateAcquired = ?, Warranty = ?, Notes = ?, History = ? WHERE ICN = ?", [req.body.employeeId, req.body.lesOlsonId, req.body.make, req.body.model, req.body.serialNumber, req.body.dateAcquired, req.body.warranty, req.body.notes, req.body.history, req.body.icn])
         .then(rows => {
             return database.close();
         })
@@ -3299,13 +3184,12 @@ router.post('/printer', function (req, res, next) {
     // res.render('home', {title: 'Welcome', user: 'McKay'})
 });
 
-router.post('/employee', function (req, res, next) {
+router.post('/employee', function(req, res, next) {
     let database = new Database(config.getConfig());
     if (!req.body.homeCheckout) {
         req.body.homeCheckout = 'off';
     }
-    database.query("UPDATE Employee SET FirstName = ?, LastName = ?, Category = ?, Office = ?, Building = ?, Email = ?, UserName = ?, RotationGroup = ?, DateSwitched = ?, `Employee Notes` = ?, PictureURL = ? WHERE EmployeeID = ?",
-        [req.body.firstName, req.body.lastName, req.body.category, req.body.office, req.body.building, req.body.email, req.body.username, req.body.rotationGroup, req.body.dateSwitched, req.body.notes, req.body.pictureURL, req.body.employeeId])
+    database.query("UPDATE Employee SET FirstName = ?, LastName = ?, Category = ?, Office = ?, Building = ?, Email = ?, UserName = ?, RotationGroup = ?, DateSwitched = ?, `Employee Notes` = ?, PictureURL = ? WHERE EmployeeID = ?", [req.body.firstName, req.body.lastName, req.body.category, req.body.office, req.body.building, req.body.email, req.body.username, req.body.rotationGroup, req.body.dateSwitched, req.body.notes, req.body.pictureURL, req.body.employeeId])
         .then(rows => {
             return database.close();
         })
@@ -3318,7 +3202,7 @@ router.post('/employee', function (req, res, next) {
     // res.render('home', {title: 'Welcome', user: 'McKay'})
 });
 
-router.post('/updatePageCount', function (req, res, next) {
+router.post('/updatePageCount', function(req, res, next) {
     let database = new Database(config.getConfig());
     let ICN = req.query.ICN;
     let PageCount = req.query.PageCount;
@@ -3327,14 +3211,13 @@ router.post('/updatePageCount', function (req, res, next) {
         .then(rows => {
             if (rows[0]['MAX(PageCount)'] <= parseInt(PageCount)) {
                 return database.query('INSERT INTO PageCounts (ICN, PageCount, Date, Type) VALUES (?,?, ?, ?)', [ICN, PageCount, getCurrentDate(), Type]);
-            }
-            else {
+            } else {
                 PageCount = 'Needs to be higher than ' + rows[0]['MAX(PageCount)'];
                 return null;
             }
         })
         .then(() => {
-            res.send({PageCount, date: getCurrentFormatedDate()});
+            res.send({ PageCount, date: getCurrentFormatedDate() });
         })
         .catch(err => {
             console.log(err);
@@ -3342,7 +3225,7 @@ router.post('/updatePageCount', function (req, res, next) {
         })
 });
 
-router.get('/selectSurplussing', function (req, res, next) {
+router.get('/selectSurplussing', function(req, res, next) {
     let database = new Database(config.getConfig());
     let computerQuery = `SELECT * FROM Computer WHERE Surplussing = 1 AND EmployeeID = 300`;
     let monitorQuery = `SELECT * FROM Monitor WHERE Surplussing = 1 AND EmployeeID = 300`;
@@ -3376,7 +3259,7 @@ router.get('/selectSurplussing', function (req, res, next) {
         })
 });
 
-router.get('/sendToSurplus', function (req, res, next) {
+router.get('/sendToSurplus', function(req, res, next) {
     let database = new Database(config.getConfig());
     let date = new Date();
     let name = JSON.parse(vault.read(req)).name;
@@ -3402,7 +3285,7 @@ router.get('/sendToSurplus', function (req, res, next) {
         })
 });
 
-router.get('/test', function (req, res, next) {
+router.get('/test', function(req, res, next) {
     let test = {
         test1: 'test1',
         test2: 'test2'
@@ -3412,7 +3295,7 @@ router.get('/test', function (req, res, next) {
     res.redirect('/');
 });
 
-router.get('/accordian', function (req, res, next) {
+router.get('/accordian', function(req, res, next) {
     let database = new Database(config.getConfig());
     let computers = {};
     let monitors = {};
@@ -3459,7 +3342,7 @@ router.get('/accordian', function (req, res, next) {
         });
 });
 
-router.get('/oldToNew', function (req, res, next){
+router.get('/oldToNew', function(req, res, next) {
     let database = new Database(config.getConfig());
     let tables = [];
     let columns = {};
@@ -3468,12 +3351,12 @@ router.get('/oldToNew', function (req, res, next){
             tables = results;
             console.log(results);
         })
-        .then(async ()=>{
-            for(table of tables){
+        .then(async() => {
+            for (table of tables) {
                 columns[table.Tables_in_inventory] = await database.query(`SELECT * FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = N'${table.Tables_in_inventory}';`);
             }
         })
-        .then(()=>{
+        .then(() => {
             database.close();
             res.render('oldToNew', {
                 tables,
@@ -3488,14 +3371,14 @@ router.get('/oldToNew', function (req, res, next){
         })
 });
 
-router.get('/values', function(req, res, next){
+router.get('/values', function(req, res, next) {
     let database = new Database(config.getConfig());
-    let {table, column} = req.query;
+    let { table, column } = req.query;
     let query = `SELECT DISTINCT ?? FROM ?? WHERE EmployeeID != 400`;
-    if(table === 'Filters'){
+    if (table === 'Filters') {
         query = `SELECT DISTINCT ?? FROM ??`;
     }
-    if(table === 'Hardware'){
+    if (table === 'Hardware') {
         query = `SELECT DISTINCT ?? FROM ?? join Computer on Computer.HardwareID = Hardware.HardwareID WHERE EmployeeID != 400`;
     }
     let options = [column, table];
@@ -3511,9 +3394,9 @@ router.get('/values', function(req, res, next){
         })
 });
 
-router.post('/updateValues', function(req, res, next){
+router.post('/updateValues', function(req, res, next) {
     let database = new Database(config.getConfig());
-    let {table, column, value, newValue} = req.body;
+    let { table, column, value, newValue } = req.body;
     let query = `UPDATE ?? SET ?? = ? WHERE ?? = ?;`;
     let options = [table, column, newValue, column, value];
     database.query(query, options)

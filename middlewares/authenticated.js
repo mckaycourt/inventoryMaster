@@ -61,18 +61,16 @@ function checkUserUpdated(user) {
         for (let i in user.memberOf) {
             if (user.memberOf[i] === 'RICHARD_CROOKSTON--RBC9') {
                 return true;
-            } else if (user.memberOf[i] !== 'RICHARD_CROOKSTON--RBC9') {
-                let possiblities = ['mmcourt', 'jking793', 'rbc9', 'pdiaz3', 'kroosa', 'twilks', 'mft17'];
-                //added myself and current employees in here, i don't think any of of the others are still working here besides rbc9
-                for (let i in possiblities) {
-                    if (possiblities[i] === user.netId) {
-                        return true;
-                    }
-                }
-            } else {
-                return false;
             }
         }
+        let possiblities = ['mmcourt', 'jking793', 'rbc9', 'pdiaz3', 'kroosa', 'twilks', 'mft17'];
+        //added myself and current employees in here, i don't think any of of the others are still working here besides rbc9
+        for (let i in possiblities) {
+            if (possiblities[i] === user.netId) {
+                return true;
+            }
+        }
+        return false;
     }
 }
 
