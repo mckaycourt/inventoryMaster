@@ -184,6 +184,7 @@ module.exports = function(req, res, next) {
                         .then(rows => {
                             database.close();
                             vault.write(req, json);
+                            console.log('redirect 187');
                             res.redirect(URL + goTo);
                         })
                         .catch(err => {
@@ -211,6 +212,7 @@ module.exports = function(req, res, next) {
                 console.log(query[i]);
                 parameters += '?' + i + '=' + query[i];
             }
+            console.log('redirect 215');
             res.redirect('https://cas.byu.edu/cas/login?service=' + encodeURIComponent(URL + '/getTicket?goTo=' + goTo));
         } else {
             next();
